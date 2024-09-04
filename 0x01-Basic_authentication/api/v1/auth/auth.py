@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Module for authentication handling."""
+import re
 from typing import List, TypeVar
 from flask import request
 
@@ -18,12 +19,23 @@ class Auth:
         Returns:
             bool: True if authentication is required, False otherwise.
         """
-        if path is None or excluded_paths is None or len(excluded_paths) == 0:
+        if path is None or excluded_paths is None or not excluded_paths:
             return True
-        if path[-1] != "/":
-            path += "/"
 
-        return path not in excluded_paths
+        path = path.rstrip('/') + '/'  # Ensure path ends with exactly one '/'
+
+        for excluded_path in map(lambda x: x.strip(), excluded_paths):
+            if excluded_path.endswith('*'):
+                pattern = f"^{re.escape(excluded_path[:-1])}.*$"
+            elif excluded_path.endswith('/'):
+                pattern = f"^{re.escape(excluded_path[:-1])}/?.*$"
+            else:
+                pattern = f"^{re.escape(excluded_path)}/?$"
+
+        if re.match(pattern, path):
+            return False
+
+        return True
 
     def authorization_header(self, request=None) -> str:
         """Get the Authorization header from the request.

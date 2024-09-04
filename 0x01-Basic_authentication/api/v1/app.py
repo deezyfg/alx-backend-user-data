@@ -2,11 +2,11 @@
 """
 Route module for the API
 """
-from os import getenv
-from api.v1.views import app_views
-from flask import Flask, jsonify, abort, request, abort
-from flask_cors import CORS, cross_origin
 import os
+from os import getenv
+from flask import Flask, jsonify, abort, request
+from flask_cors import (CORS, cross_origin)
+from api.v1.views import app_views
 from api.v1.auth.auth import Auth
 from api.v1.auth.basic_auth import BasicAuth
 
@@ -16,25 +16,31 @@ CORS(app, resources={r"/api/v1/*": {"origins": "*"}})
 
 
 auth = None
-if os.getenv("AUTH_TYPE") == "basic_auth":
-    auth = BasicAuth()
-elif os.getenv("AUTH_TYPE") == "auth":
+auth_type = getenv('AUTH_TYPE', 'auth')
+if auth_type == 'auth':
     auth = Auth()
+if auth_type == 'basic_auth':
+    auth = BasicAuth()
 
 
 @app.before_request
-def before_request_func():
-    """Perform authentication checks before processing requests."""
-    if auth is None:
-        return
-    if not auth.require_auth(request.path, ['/api/v1/status/',
-                                            '/api/v1/unauthorized/',
-                                            '/api/v1/forbidden/']):
-        return
-    if auth.authorization_header(request) is None:
-        abort(401)
-    if auth.current_user(request) is None:
-        abort(403)
+def authenticate_user():
+    """
+    Perform authentication checks before processing requests.
+    """
+    if auth:
+        excluded_paths = [
+            '/api/v1/status/',
+            '/api/v1/unauthorized/',
+            '/api/v1/forbidden/',
+        ]
+        if auth.require_auth(request.path, excluded_paths):
+            auth_header = auth.authorization_header(request)
+            user = auth.current_user(request)
+            if auth_header is None:
+                abort(401)
+            if user is None:
+                abort(403)
 
 
 @app.errorhandler(401)
@@ -44,7 +50,7 @@ def unauthorized(error) -> str:
 
 
 @app.errorhandler(403)
-def forbidden(error):
+def forbidden(error) -> str:
     """Handle 403 Forbidden errors."""
     return jsonify({"error": "Forbidden"}), 403
 
