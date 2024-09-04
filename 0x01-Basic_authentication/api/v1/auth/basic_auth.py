@@ -25,7 +25,7 @@ class BasicAuth(Auth):
         Returns:
             str: The Base64 part of the header, or None if invalid.
         """
-        if type(authorization_header) == str:
+        if isinstance(authorization_header, str):
             pattern = r'Basic (?P<token>.+)'
             field_match = re.fullmatch(pattern, authorization_header.strip())
             if field_match is not None:
@@ -43,7 +43,7 @@ class BasicAuth(Auth):
         Returns:
             str: The decoded string, or None if decoding fails.
         """
-        if type(base64_authorization_header) == str:
+        if isinstance(base64_authorization_header, str):
             try:
                 res = base64.b64decode(
                     base64_authorization_header,
@@ -67,7 +67,7 @@ class BasicAuth(Auth):
             Tuple[str, str]: The user email and password,
                              or (None, None) if invalid.
         """
-        if type(decoded_base64_authorization_header) == str:
+        if isinstance(decoded_base64_authorization_header, str):
             pattern = r'(?P<user>[^:]+):(?P<password>.+)'
             field_match = re.fullmatch(
                 pattern,
@@ -91,7 +91,7 @@ class BasicAuth(Auth):
         Returns:
             User: The User instance if credentials are valid, None otherwise.
         """
-        if type(user_email) == str and type(user_pwd) == str:
+        if isinstance(user_email, str) and isinstance(user_pwd, str):
             try:
                 users = User.search({'email': user_email})
             except Exception:
