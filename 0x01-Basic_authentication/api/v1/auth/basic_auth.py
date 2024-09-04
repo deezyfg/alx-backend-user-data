@@ -52,7 +52,7 @@ class BasicAuth(Auth):
                 return res.decode('utf-8')
             except (binascii.Error, UnicodeDecodeError):
                 return None
-        return None
+
 
     def extract_user_credentials(
             self, decoded_base64_authorization_header: str) -> Tuple[str, str]:
@@ -74,7 +74,9 @@ class BasicAuth(Auth):
                 decoded_base64_authorization_header.strip(),
             )
             if field_match is not None:
-                return field_match.group('user'), field_match.group('password')
+                user = field_match.group('user')
+                password = field_match.group('password')
+                return user, password
         return None, None
 
     def user_object_from_credentials(
@@ -112,6 +114,6 @@ class BasicAuth(Auth):
         """
         auth_header = self.authorization_header(request)
         b64_auth_token = self.extract_base64_authorization_header(auth_header)
-        decoded = self.decode_base64_authorization_header(b64_auth_token)
+        auth_token = self.decode_base64_authorization_header(b64_auth_token)
         email, password = self.extract_user_credentials(decoded)
         return self.user_object_from_credentials(email, password)
